@@ -1,0 +1,190 @@
+{
+    "file_name": "Olivia",
+    "wing_name": "Wing",
+    "profile_file": "s9037opt5.dat",
+    "num_sect": 10,
+    "Bref": 3.0,
+    "Ma": 0.053,
+    "CLtarget": 0.415,
+    "Starget": 0.85,
+    "CDp": 0.012,
+    "dihed": {
+        "bounds": [
+            0.0,
+            2.0
+        ],
+        "initial": 0.1
+    },
+    "sections": [
+        {
+            "name": 1,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.5
+                ],
+                "initial": 0.426
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        },
+        {
+            "name": 2,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.5
+                ],
+                "initial": 0.369
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        },
+        {
+            "name": 3,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.4
+                ],
+                "initial": 0.312
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        },
+        {
+            "name": 4,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.4
+                ],
+                "initial": 0.284
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        },
+        {
+            "name": 5,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.4
+                ],
+                "initial": 0.284
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        },
+        {
+            "name": 6,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.4
+                ],
+                "initial": 0.284
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        },
+        {
+            "name": 7,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.4
+                ],
+                "initial": 0.284
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        },
+        {
+            "name": 8,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.4
+                ],
+                "initial": 0.227
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        },
+        {
+            "name": 9,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.4
+                ],
+                "initial": 0.170
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        },
+        {
+            "name": 10,
+            "chord": {
+                "bounds": [
+                    0.01,
+                    0.4
+                ],
+                "initial": 0.142
+            },
+            "twist": {
+                "bounds": [
+                    -2.0,
+                    0.5
+                ],
+                "initial": -0.1
+            }
+        }
+    ]
+}
