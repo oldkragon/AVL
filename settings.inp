@@ -1,0 +1,177 @@
+!
+! Xoptfoil2 - Reference of input parameters 
+!
+! Values shown are the default values of the parameters
+!
+
+&optimization_options                            	! main control of optimization
+  airfoil_file     = 's9037.dat'      			! either '.dat', '.bez' or '.hicks' file 
+  shape_functions  = 'hicks-henne'               	! either 'hicks-henne', 'bezier' or 'camb-thick' 
+  cpu_threads      = 30                          	! no of cpu threads or -n less than available 
+  show_details     = .true.                      	! show details of actions and results           
+/  
+
+
+!&bezier_options                                  	! options for shape_function 'bezier'
+!  ncp_top          = 7                           	! no of bezier control points on top side              
+!  ncp_bot          = 7                           	! no of bezier control points on bot side
+!  initial_perturb  = 0.1                         	! max. perturb when creating initial designs
+!/
+
+&hicks_henne_options                             ! options for shape_function 'hicks-henne'
+  nfunctions_top   = 5                           ! hicks-henne functions on top side              
+  nfunctions_bot   = 5                           ! hicks-henne functions on bot side
+  initial_perturb  = 0.1                         ! max. perturb when creating initial designs 
+  smooth_seed      = .false.                     ! smooth (match bezier) of seed airfoil prior to optimization
+/
+
+!&camb_thick_options                              ! options for shape_function 'camb_thick'
+!  thickness        = .true.                      ! optimize thickness 
+!  thickness_pos    = .true.                      ! optimize max. thickness position
+!  camber           = .true.                      ! optimize camber
+!  camber_pos       = .true.                      ! optimize max. camber position
+!  le_radius        = .true.                      ! optimize leading edge radius
+!  le_radius_blend  = .true.                      ! optimize blending distance for le radius change 
+!  initial_perturb  = 0.1d0                       ! max. perturb when creating initial designs 
+!/
+
+&operating_conditions                            	! options to describe the optimization task
+  dynamic_weighting      = .true.                	! activate dynamic weighting during optimization
+  allow_improved_target  = .false.                	! allow result to be better than target value
+  
+  re_default             = 3E+5                		! use this Reynolds number for operating points
+  re_default_as_resqrtcl = .false.               	! interpret re number as type 2 (Re*sqrt(cl)) 
+  mach_default           = 0.05                   	! use this Mach number for operating points 
+  
+  use_flap               = .true.               	! activate flap setting or optimization
+  x_flap                 = 0.75                  	! chord position of flap 
+  y_flap                 = 0.5                   	! vertical hinge position 
+  y_flap_spec            = 'y/t'                 	! 'y/c' in chord unit or 'y/t' relative to height
+  flap_angle_default     = 0.0                   	! default flap angle for all op points
+
+  noppoint         = 8                           	! no of operating points
+
+  ! --- repeat the following per operating point ---------
+  ! on span
+  op_mode(1)       = 'spec_al'                   	! op either 'spec_cl' or 'spec_al' based             
+  op_point(1)      = 0.0                         	! value of either cl or alpha         
+  optimization_type(1) = 'min-drag'           		! 'min-drag', 'max-glide', 'min-sink', 'max-lift', 'max-xtr', 'target-drag', 'target-glide', 'target-moment', 
+  target_value(1)  = 0.0                         	! target value if type = 'target-...'
+
+  ! on tip
+  op_mode(2)       = 'spec_al'                   	! op either 'spec_cl' or 'spec_al' based             
+  op_point(2)      = -2.0                         	! value of either cl or alpha         
+  optimization_type(2) = 'max-xtr'           		! 'min-drag', 'max-glide', 'min-sink', 'max-lift', 'max-xtr', 'target-drag', 'target-glide', 'target-moment',            
+  reynolds(2)      = 1.5E+5                            	! individual re number of op (default: re_default) 
+
+  ! on root
+  op_mode(3)       = 'spec_al'                   	! op either 'spec_cl' or 'spec_al' based             
+  op_point(3)      = 10.0                         	! value of either cl or alpha         
+  optimization_type(3) = 'target-lift'        	   	! 'min-drag', 'max-glide', 'min-sink', 'max-lift', 'max-xtr', 'target-drag', 'target-glide', 'target-moment'             
+  target_value(3)  = 1.4
+  reynolds(3)      = 3.5E+5                            	! individual re number of op (default: re_default)  
+  flap_angle(3)    = 20.0                            	! individual flap angle (default: flap_angle_default)
+  flap_optimize(3) = .false.                     	! optimize this flap angle 
+
+  ! with payload
+  op_mode(4)       = 'spec_cl'                   	! op either 'spec_cl' or 'spec_al' based             
+  op_point(4)      = 0.415                         	! value of either cl or alpha         
+  optimization_type(4) = 'max-glide'           		! 'min-drag', 'max-glide', 'min-sink', 'max-lift', 'max-xtr', 'target-drag', 'target-glide', 'target-moment'            
+
+
+  op_mode(5)       = 'spec_cl'                   	! op either 'spec_cl' or 'spec_al' based             
+  op_point(5)      = 0.415                         	! value of either cl or alpha         
+  optimization_type(5) = 'min-drag'           	! 'min-drag', 'max-glide', 'min-sink', 'max-lift', 'max-xtr', 'target-drag', 'target-glide', 'target-moment',              
+
+  
+  ! without payload
+  op_mode(6)       = 'spec_cl'                   	! op either 'spec_cl' or 'spec_al' based             
+  op_point(6)      = 0.254                         	! value of either cl or alpha         
+  optimization_type(6) = 'max-glide'           		! 'min-drag', 'max-glide', 'min-sink', 'max-lift', 'max-xtr', 'target-drag', 'target-glide', 'target-moment', 'target-lift'      
+
+  op_mode(7)       = 'spec_al'                   	! op either 'spec_cl' or 'spec_al' based             
+  op_point(7)      = 0.0                         	! value of either cl or alpha         
+  optimization_type(7) = 'target-lift'          	! 'min-drag', 'max-glide', 'min-sink', 'max-lift', 'max-xtr', 'target-drag', 'target-glide', 'target-moment', 'target-lift'   
+  target_value(7) =  0.254   
+
+  op_mode(8)       = 'spec_cl'                   	! op either 'spec_cl' or 'spec_al' based             
+  op_point(8)      = 0.254                         	! value of either cl or alpha         
+  optimization_type(8) = 'min-drag'           		! 'min-drag', 'max-glide', 'min-sink', 'max-lift', 'max-xtr', 'target-drag', 'target-glide', 'target-moment',               
+
+  ! to raise the curve
+  op_mode(9)       = 'spec_al'                   	! op either 'spec_cl' or 'spec_al' based             
+  op_point(9)      = 4.3                         	! value of either cl or alpha         
+  optimization_type(9) = 'max-glide'           		! 'min-drag', 'max-glide', 'min-sink', 'max-lift', 'max-xtr', 'target-drag', 'target-glide', 'target-moment'            
+  !target_value(9)  = 100
+
+
+
+/
+
+!&geometry_targets                                	! geometry targets which should be achieved
+!  ngeo_targets     = 1                           	! no of geometry targets 
+!  target_type(1)   = 'thickness'                       ! either 'camber', 'thickness', 'match-foil' 
+!  target_value(1)  = 0.1                         	! target value to achieve 
+!  target_string(1) = 0.0                         	! in case of 'match-foil' filename of airfoil 
+!  !weighting(1)     = .1                         	! weighting of this target
+!  preset_to_target(1) = .false.                  	! preset seed airfoil to this target 
+!/  
+
+&curvature                                       	! geometry curvature constraints for optimization 
+  check_curvature  = .true.                      	! check curvature during optimization
+  auto_curvature   = .true.                      	! auto determine thresholds for curvature and bumps
+  max_curv_reverse_top = 1                       	! max no of curvature reversals - top ("reflexed"?)
+  max_curv_reverse_bot = 1                       	! max no of curvature reversals - bot ("rearloading"?)
+  curv_threshold   = 0.1                         	! threshold to detect reversals 
+  max_te_curvature = 5.0                         	! max curvature at trailing edge
+  max_le_curvature_diff = 5.0                    	! Bezier: max curvature difference at leading edge
+  spike_threshold  = 0.5                         	! threshold to detect spikes aga bumps 
+  max_spikes_top   = 0                           	! max no of curvature bumbs - top 
+  max_spikes_bot   = 0                           	! max no of curvature bumbs - bot 
+/
+
+&constraints                                     	! geometry constraints for optimization
+  check_geometry   = .true.                      	! check geometry against geometry constraints 
+  min_te_angle     = 2.d0                        	! min trailing edge angle in degrees
+  symmetrical      = .false.                    	! force airfoil to be symmetrical 
+  min_thickness    = .089                           	! min thickness        (better use geometry targets) 
+  max_thickness    = .11                            	! max thickness        (better use geometry targets)
+  max_flap_angle   = 25
+  max_te_curvature = 10.d0
+/
+
+&paneling_options                                	! options for re-paneling before optimization 
+  npan             = 200                         	! no of panels of airfoil
+  npoint           = 201                         	! alternative: number of coordinate points
+  le_bunch         = 0.86                        	! panel bunch at leading edge  - 0..1 (max) 
+  te_bunch         = 0.6                         	! panel bunch at trailing edge - 0..1 (max) 
+/
+
+&particle_swarm_options                          	! options for particle swarm optimization - PSO
+  pop              = 100                          	! swarm population - no of particles 
+  min_radius       = 0.001                       	! design radius when optimization shall be finished
+  max_iterations   = 500                         	! max no of iterations 
+  max_retries      = 3                           	! no of particle retries for geometry violations
+  max_speed        = 0.1                         	! max speed of a particle in solution space 0..1 
+  init_attempts    = 1000                        	! no of tries to get initial, valid design 
+  convergence_profile = 'exhaustive'            	! either 'exhaustive' or 'quick' or 'quick_camb_thick'
+/
+
+&polar_generation                                	! options only for 'Worker'   
+  polar_reynolds   = 0                           	! list of reynolds like 100000, 200000, 600000
+  polar_mach       = 0                           	! list of mach like 0.1, 0.2, 0.5
+  type_of_polar    = 1                           	! either Type 1 or Type 2 polar 
+  auto_range       = .false.                     	! best values for mode and range automatically set
+  op_mode          = 'spec-al'                   	! range based on alpha or cl 
+  op_point_range   = -2, 10, 0.25                	! range start, end, delta 
+/
+
+&xfoil_run_options
+  ncrit            = 9                           	! ncrit default value for op points 
+  xtript           = 1.0                         	! forced transition point 0..1 - top  
+  xtripb           = 1.0                         	! forced transition point 0..1 - bot  
+  bl_maxit         = 500                          	! max no of xfoil iterations to converge
+  vaccel           = 0.005                       	! xfoil vaccel parameter
+  fix_unconverged  = .true.                      	! auto retry when op point doesn't converge
+  reinitialize     = .false.                     	! reinit xfoil boundary layer after each op point 
+/

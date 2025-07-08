@@ -1,0 +1,110 @@
+Olivia
+0.0                   !   Mach
+0     0     0.0       !   iYsym  iZsym  Zsym
+0.85 0.275  3.0       !   Sref   Cref   Bref   reference area, chord, span
+0.429  0.0   0.0       !   Xref   Yref   Zref   moment reference location (arb.)
+0.020                 !   CDp
+#
+#==============================================================
+#
+SURFACE
+Wing
+10  1.0  26  -1.0   ! Nchord   Cspace   Nspan  Sspace
+#
+# reflect image wing about y=0 plane
+YDUPLICATE
+     0.00000 
+#
+# twist angle bias for whole surface
+ANGLE
+     0    
+#
+SCALE
+  1.0   1.0   1.0
+#
+# x,y,z bias for whole surface
+TRANSLATE
+    0.429    0.00000     0.00000
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !1
+    0.0000000000         0.0000000000         0.0000000000         0.4        0.0714465685   2     -0.75
+
+AFIL
+s9037opt5.dat
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !2
+    0.01         0.2604722665         0.0004546096         0.3916230204        -0.1000000000   3     -1.25
+
+AFIL
+s9037opt5.dat
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !3
+     0.05         0.5130302150         0.0008954062         0.3516316307        -0.1000000000   4     -1.25
+
+AFIL
+s9037opt5.dat
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !4
+    0.065         0.7500000000         0.0013089963         0.3350882339        -0.1000000000   4     -1.25
+
+AFIL
+s9037opt5.dat
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !5
+    0.065         0.9641814145         0.0016828132         0.3350236323        -0.1000000000   3     -1.25
+
+AFIL
+s9037opt5.dat
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !6
+    0.12         1.1490666647         0.0020054986         0.2736985093        -0.1000000000   3     -1.25
+
+AFIL
+s9037opt5.dat
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !7
+     0.22         1.2990381057         0.0022672481         0.1747026973        -0.1000000000   3     -1.25
+
+AFIL
+s9037opt5.dat
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !8
+    0.26         1.4095389312         0.0024601083         0.1409803912        -0.1000000000   2     -1.25
+
+AFIL
+s9037opt5.dat
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !9
+    0.28         1.4772116295         0.0025782194         0.1156240520        -0.1000000000   2     -1.30
+
+AFIL
+s9037opt5.dat
+#
+#--------------------------------------------------------------
+#    Xle         Yle         Zle         chord       angle   Nspan  Sspace
+SECTION !10
+    0.32        1.5000000000         0.0026179925         0.0875699084        -0.1000000000   1     0
+
+AFIL
+s9037opt5.dat
+#
+#==============================================================
+#
