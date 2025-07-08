@@ -319,7 +319,7 @@ def WriteFinalResults(params:list, fixed_params:dict):
     )
 
 def main():
-    config_path = "config.json"
+    config_path = input("Provide the path to the .json config file:\n")
     
     (
         file_name, wing_name, profile_name, 
