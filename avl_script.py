@@ -8,7 +8,6 @@ import uuid
 
 """
 TO-DO
-insert a mode for linear twist and test if gives better results careful with ReadConfigJSON, CostFunction, WriteFinalResults
 still needs some work
 multiprocessing doesn't read file correctly (same S for each run in iteration)
 add regulation for # cores and .json path
@@ -79,10 +78,7 @@ def ReadConfigJSON(config_path:str):
     x0 = []
 
     chords = []
-    twists = []
-
     chords_b = []
-    twists_b = []
 
     dihed_data = config["dihed"]
     bounds.append(dihed_data["bounds"])
@@ -90,22 +86,21 @@ def ReadConfigJSON(config_path:str):
     dihed = dihed_data["initial"]
     x0.append(dihed)
 
+    twist_data = config["twist"]
+    bounds.append(twist_data["bounds"])
+
+    twist = twist_data["initial"]
+    x0.append(twist)
+
     for section in config["sections"]:
         chord_data =section["chord"]
         chords.append(chord_data["initial"])
         chords_b.append(tuple(chord_data["bounds"]))
 
-        twist_data =section["twist"]
-        twists.append(twist_data["initial"])
-        twists_b.append(tuple(twist_data["bounds"]))
-
     x0.extend(chords)
-    x0.extend(twists)
 
     bounds.extend(chords_b)
-    bounds.extend(twists_b)
 
-    bounds = bounds
     
     return file_name, wing_name, profile_name, Starget, Bref, Ma, CLtarget, CDp, sections, x0, bounds
     
@@ -238,10 +233,10 @@ def CostFunction(params:list, fixed_params:dict):
     AVL_path   = f"temp/input_{uid}.avl"
     
     dihed        = params[0]
+    twist        = params[1]
+    chords       = params[2:]
+    
     sections     = fixed_params['sections']
-    chords       = params[1:1 + sections]
-    twists       = params[1 + sections:]
-
     file_name    = fixed_params['file_name']
     wing_name    = fixed_params['wing_name']
     profile_file = fixed_params['profile_file']
@@ -255,6 +250,8 @@ def CostFunction(params:list, fixed_params:dict):
     Yle = CalculateYle(Bref/2, sections)
     Xle = CalculateXle(chords, Yle)
     Zle = CalculateZle(dihed, Yle)
+
+    twists = CalculateTwists(twist, Yle, Bref/2)
     
     Sref = CalculateSref(Yle, chords)
     Cref = CalculateMAC(Sref, Yle, chords)
@@ -285,10 +282,10 @@ def CostFunction(params:list, fixed_params:dict):
 
 def WriteFinalResults(params:list, fixed_params:dict):
     dihed        = params[0]
+    twist        = params[1]
+    chords       = params[2:]
+    
     sections     = fixed_params['sections']
-    chords       = params[1:1 + sections]
-    twists       = params[1 + sections:]
-
     file_name    = fixed_params['file_name']
     wing_name    = fixed_params['wing_name']
     profile_file = fixed_params['profile_file']
@@ -301,6 +298,8 @@ def WriteFinalResults(params:list, fixed_params:dict):
     Yle = CalculateYle(Bref/2, sections)
     Xle = CalculateXle(chords, Yle)
     Zle = CalculateZle(dihed, Yle)
+
+    twists = CalculateTwists(twist, Yle, Bref/2)
 
     Sref = CalculateSref(Yle, chords)
     Cref = CalculateMAC(Sref, Yle, chords)
@@ -343,7 +342,7 @@ def main():
     logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(message)s')
     
     def AreaConstraint(params):
-        chords   = params[1 : 1 + sections]
+        chords   = params[2:]
         Yle      = CalculateYle(Bref/2, sections)
         Sref     = CalculateSref(Yle, chords)
         return Sref - Starget
