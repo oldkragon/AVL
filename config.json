@@ -117,10 +117,10 @@
             "name": 10,
             "chord": {
                 "bounds": [
-                    0.01,
+                    0.0,
                     0.4
                 ],
-                "initial": 0.0
+                "initial": 0.05
             }
         }
     ]

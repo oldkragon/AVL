@@ -12,7 +12,8 @@ still needs some work
 multiprocessing doesn't read file correctly (same S for each run in iteration)
 add regulation for # cores and .json path
 """
-# Took 1 h 10 min to run, see with linear twist
+# Took 1 h 10 min to run
+# # 37 min with linear twist
 # AN ACCURATE ESTIMATE OF THE PROFILE CD AT 0-1 deg IS KEY FOR THE OPTIMIZATION
 
 # Calculates Xle for each point in y_pan with a sweep angle of dihed in DEGREES
