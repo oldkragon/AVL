@@ -132,7 +132,7 @@ def WriteAVLFile(
 #
 SURFACE
 {wing_name}
-10  1.0  26  1.0   ! Nchord   Cspace   Nspan  Sspace
+11  1.0  {7*sections}  1.0   ! Nchord   Cspace   Nspan  Sspace
 #
 # reflect image wing about y=0 plane
 YDUPLICATE
@@ -154,7 +154,7 @@ TRANSLATE
 #--------------------------------------------------------------
 #    Xle         Yle         Zle         chord       angle   Nspan  Sspace
 SECTION
-    {Xle[i]:.10f}         {Yle[i]:.10f}         {Zle[i]:.10f}         {chords[i]:.10f}        {twists[i]:.10f}   4     -2
+    {Xle[i]:.10f}         {Yle[i]:.10f}         {Zle[i]:.10f}         {chords[i]:.10f}        {twists[i]:.10f}   7     -2
 
 AFIL
 {profile_file}
