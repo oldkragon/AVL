@@ -34,6 +34,15 @@ def CalculateXle(chords:list, y_pan:np.ndarray, sweep=0.0):
         x_pan += y_pan* np.sin(np.pi/180 *sweep)
     return x_pan
 
+
+# Calculates the wing surface
+def CalculateSref(y_pan:np.ndarray, chords:list):
+    if len(chords) != len(y_pan):
+        raise ValueError("Chords and y_pan don't have the same length")
+    Sref =  2 * np.trapz(chords, y_pan)
+    return Sref
+
+
 # Composes the .avl file for a surface
 def WriteAVLFile(
         Ma:float, 
@@ -158,7 +167,7 @@ def XpanRefinementStudy(
         loads_path   = 'temp/test.txt',
         Ma           = 0.053,
         Cl_target    = 0.415,
-        Sref         = 0.85,
+        Starget      = 0.85,
         Bref         = 3,
         Num_sect     = 10,
         num_pan_y    = 40,
@@ -171,7 +180,8 @@ def XpanRefinementStudy(
 
     for num_pan_x in range(max_num_pan_x):
         Yle    = CalculateYle(Bref/2, Num_sect)
-        chords = CalculateChords(Yle, Sref, Bref/2)
+        chords = CalculateChords(Yle, Starget, Bref/2)
+        Sref   = CalculateSref(Yle, chords)
         Cref   = CalculateMAC(Sref, Yle, chords)
         Xle    = CalculateXle(chords, Yle)
 
@@ -208,7 +218,7 @@ def YpanRefinementStudy(
         loads_path   = 'temp/test.txt',
         Ma           = 0.053,
         Cl_target    = 0.415,
-        Sref         = 0.85,
+        Starget      = 0.85,
         Bref         = 3,
         Num_sect     = 10,
         num_pan_x    = 10,
@@ -222,7 +232,8 @@ def YpanRefinementStudy(
         num_pan_y = num_pan_sect * Num_sect
 
         Yle    = CalculateYle(Bref/2, Num_sect)
-        chords = CalculateChords(Yle, Sref, Bref/2)
+        chords = CalculateChords(Yle, Starget, Bref/2)
+        Sref   = CalculateSref(Yle, chords)
         Cref   = CalculateMAC(Sref, Yle, chords)
         Xle    = CalculateXle(chords, Yle)
 
@@ -253,15 +264,71 @@ def YpanRefinementStudy(
     return Cl_list, Cd_list, Alpha_list
 
 
+def NumSectRefinementStudy(
+        max_num_sect,
+        profile_file = 's9037opt5.dat',
+        avl_path     = 'temp/test.avl',
+        loads_path   = 'temp/test.txt',
+        Ma           = 0.053,
+        Cl_target    = 0.415,
+        Starget      = 0.85,
+        Bref         = 3,
+        num_pan_x    = 10,
+        num_pan_sect = 4
+
+        ):
+    
+    Cl_list    = []
+    Cd_list    = []
+    Alpha_list = []
+
+    for num_sect in range(2, max_num_sect):
+        num_pan_y = num_sect * num_pan_sect
+
+        Yle    = CalculateYle(Bref/2, num_sect)
+        chords = CalculateChords(Yle, Starget, Bref/2)
+        Sref = CalculateSref(Yle, chords)
+        Cref   = CalculateMAC(Sref, Yle, chords)
+        Xle    = CalculateXle(chords, Yle)
+
+        WriteAVLFile(
+            Ma,
+            num_sect,
+            chords,
+            profile_file,
+            avl_path,
+            Xle, Yle,
+            Sref, Cref, Bref,
+            num_pan_x, num_pan_y,
+            num_pan_sect
+        )
+
+        RunAVL(
+            Cl_target,
+            avl_path,
+            loads_path
+        )
+
+        (Cl, Cd, alpha) = ParseResults(loads_path)
+
+        Cl_list.append(Cl)
+        Cd_list.append(Cd)
+        Alpha_list.append(alpha)
+    
+    return Cl_list, Cd_list, Alpha_list
+
 
 def main():
-    max_num_pan_x = 15
+    max_num_pan_x = 20
     x = np.linspace(1, max_num_pan_x, max_num_pan_x)
-    max_num_pan_sect = 10
+    max_num_pan_sect = 20
     y = np.linspace(1, max_num_pan_sect, max_num_pan_sect)
+    max_num_sect = 20
+    z = np.linspace(2, max_num_sect-1, max_num_sect-2)
  
     (Cl_x, Cd_x, Alpha_x) = XpanRefinementStudy(max_num_pan_x)
     (Cl_y, Cd_y, Alpha_y) = YpanRefinementStudy(max_num_pan_sect)
+    (Cl_z, Cd_z, Alpha_z) = NumSectRefinementStudy(max_num_sect)
 
     plt.figure(1)
 
@@ -297,6 +364,25 @@ def main():
     plt.subplot(1, 3, 3)
     plt.plot(y, Alpha_y)
     plt.title('Alpha - num_pan_y')
+    plt.grid(True)
+
+    plt.tight_layout()
+
+    plt.figure(3)
+
+    plt.subplot(1, 3, 1)
+    plt.plot(z, Cl_z)
+    plt.title('Cl - num_sect')
+    plt.grid(True)
+
+    plt.subplot(1, 3, 2)
+    plt.plot(z, Cd_z)
+    plt.title('Cd - num_sect')
+    plt.grid(True)
+
+    plt.subplot(1, 3, 3)
+    plt.plot(z, Alpha_z)
+    plt.title('Alpha - num_sect')
     plt.grid(True)
 
     plt.tight_layout()
