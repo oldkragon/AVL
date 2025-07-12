@@ -263,7 +263,7 @@ def main():
     (Cl_x, Cd_x, Alpha_x) = XpanRefinementStudy(max_num_pan_x)
     (Cl_y, Cd_y, Alpha_y) = YpanRefinementStudy(max_num_pan_sect)
 
-    plt.figure()
+    plt.figure(1)
 
     plt.subplot(1, 3, 1)
     plt.plot(x, Cl_x)
@@ -278,6 +278,25 @@ def main():
     plt.subplot(1, 3, 3)
     plt.plot(x, Alpha_x)
     plt.title('Alpha - num_pan_x')
+    plt.grid(True)
+
+    plt.tight_layout()
+
+    plt.figure(2)
+
+    plt.subplot(1, 3, 1)
+    plt.plot(y, Cl_y)
+    plt.title('Cl - num_pan_y')
+    plt.grid(True)
+
+    plt.subplot(1, 3, 2)
+    plt.plot(y, Cd_y)
+    plt.title('Cd - num_pan_y')
+    plt.grid(True)
+
+    plt.subplot(1, 3, 3)
+    plt.plot(y, Alpha_y)
+    plt.title('Alpha - num_pan_y')
     plt.grid(True)
 
     plt.tight_layout()
