@@ -20,8 +20,7 @@ add regulation for # cores and .json path
 def CalculateXle(chords:list, y_pan:np.ndarray, sweep=0.0):
     x_pan = np.array([chords[0] - c for c in chords])
     if sweep != 0.0:
-        x_pan += y_pan* np.sin(np.pi/180 *sweep)
-        
+        x_pan += y_pan* np.sin(np.pi/180 *sweep)  
     return x_pan
 
 # Calculates Yle for each section with cosine distribution
