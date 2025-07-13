@@ -374,7 +374,7 @@ def main():
         maxiter=100,                # Number of generations, 100 gave good results
         polish=False,               # Uses gradient based method for final local search, gives some improvement but takes forever (hours)
         constraints=(sref_constr,),
-        workers=10,                 # Adjust to number of cores you want to use, -1 for all aviable
+        workers=-1,                 # Adjust to number of cores you want to use, -1 for all aviable
         x0 = x0,
         disp=True,
         updating='deferred',
