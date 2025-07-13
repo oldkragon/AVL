@@ -8,8 +8,7 @@ import uuid
 
 """
 TO-DO
-still needs some work
-multiprocessing doesn't read file correctly (same S for each run in iteration)
+multi-target optimization with normalization against elliptical wing efficiency and weights
 add regulation for # cores and .json path
 """
 # Took 1 h 10 min to run
@@ -276,7 +275,7 @@ def CostFunction(params:list, fixed_params:dict):
 
     LD_ratio = ParseClCd(loads_file)
 
-    logging.info(f"\nParams: {params}\n -L/D: {-LD_ratio}\n Sref : {Sref}")
+    logging.info(f'\nCl/Cd: {LD_ratio}')
 
     return -LD_ratio
 
@@ -369,17 +368,21 @@ def main():
         CostFunction,
         bounds=bounds,
         args=(fixed_params,),
-        strategy="best2bin",
-        popsize=20,
-        tol=0.01,
-        maxiter=200,
-        polish=True,
+        strategy="best1bin",
+        popsize=30,                 # Number of candidates for generation
+        atol=0.0001,
+        maxiter=100,                # Number of generations, 100 gave good results
+        polish=False,               # Uses gradient based method for final local search, gives some improvement but takes forever (hours)
         constraints=(sref_constr,),
-        workers=6,
-        x0 = x0   
+        workers=10,                 # Adjust to number of cores you want to use, -1 for all aviable
+        x0 = x0,
+        disp=True,
+        updating='deferred',
+        mutation=(0.5, 1.5),
+        recombination=0.7, 
     )
 
-    logging.debug(res)
+    logging.info(res)
 
     WriteFinalResults(res.x, fixed_params)
 
