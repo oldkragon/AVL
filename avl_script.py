@@ -132,7 +132,7 @@ def WriteAVLFile(
 #
 SURFACE
 {wing_name}
-11  1.0  {7*sections}  1.0   ! Nchord   Cspace   Nspan  Sspace
+10  1.0  {4*sections}  -2.0   ! Nchord   Cspace   Nspan  Sspace
 #
 # reflect image wing about y=0 plane
 YDUPLICATE
@@ -154,7 +154,7 @@ TRANSLATE
 #--------------------------------------------------------------
 #    Xle         Yle         Zle         chord       angle   Nspan  Sspace
 SECTION
-    {Xle[i]:.10f}         {Yle[i]:.10f}         {Zle[i]:.10f}         {chords[i]:.10f}        {twists[i]:.10f}   7     -2
+    {Xle[i]:.10f}         {Yle[i]:.10f}         {Zle[i]:.10f}         {chords[i]:.10f}        {twists[i]:.10f}   4     -2
 
 AFIL
 {profile_file}
@@ -168,6 +168,7 @@ AFIL
 """
     with open(AVL_path, 'w') as avl_file:
         avl_file.write(BaseAVLText)
+
     return BaseAVLText
 
 
@@ -368,14 +369,14 @@ def main():
         CostFunction,
         bounds=bounds,
         args=(fixed_params,),
-        strategy="best1bin",
+        strategy="best2bin",
         popsize=20,
         tol=0.01,
-        maxiter=20000,
+        maxiter=200,
         polish=True,
         constraints=(sref_constr,),
-        workers=1,
-        x0 = x0
+        workers=6,
+        x0 = x0   
     )
 
     logging.debug(res)

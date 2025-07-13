@@ -448,6 +448,8 @@ def main():
     y = np.linspace(2, max_num_pan_sect, max_num_pan_sect-1)
     max_num_sect = 20
     z = np.linspace(2, max_num_sect, max_num_sect-1)
+
+    study_name = input('Insert study name')
  
     (Cl_x, Cd_x, Alpha_x) = XpanRefinementStudyParallel(max_num_pan_x)
     (Cl_y, Cd_y, Alpha_y) = YpanRefinementStudyParallel(max_num_pan_sect)
@@ -510,6 +512,21 @@ def main():
 
     plt.tight_layout()
     plt.show()
+
+    with open('Study.txt', 'a') as file:
+        file.write(
+            f'''Results {study_name}:
+    Panels X CDs:
+{Cd_x}
+
+    Panels Y CDs:
+{Cd_y}
+
+    Sections CDs:
+{Cd_z}
+
+'''
+    )
 
 
 if __name__ == '__main__':

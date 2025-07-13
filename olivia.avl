@@ -9,7 +9,7 @@ Olivia
 #
 SURFACE
 Wing
-10  1.0  26  -1.0   ! Nchord   Cspace   Nspan  Sspace
+10  1.0  26  -2.0   ! Nchord   Cspace   Nspan  Sspace
 #
 # reflect image wing about y=0 plane
 YDUPLICATE

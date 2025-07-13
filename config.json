@@ -5,7 +5,7 @@
     "num_sect": 10,
     "Bref": 3.0,
     "Ma": 0.053,
-    "CLtarget": 0.415,
+    "CLtarget": 1.2,
     "Starget": 0.85,
     "CDp": 0.012,
     "dihed": {
