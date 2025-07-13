@@ -1,3 +1,4 @@
 temp/
 !temp/.gitkeep
-__pychache__
+__pychache__/
+!__pychache__/.gitkeep

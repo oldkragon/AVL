@@ -3,6 +3,7 @@ import subprocess
 import logging
 import re
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
 
 # Calculates Yle for each section with cosine distribution
@@ -160,6 +161,128 @@ def ParseResults(loads_file:str):
     return CLtot, CDtot, Alpha
 
 
+def AVLCase(
+        
+        profile_file, 
+        avl_path, loads_path, 
+        Ma, Cl_target,
+        Starget, Bref, 
+        Num_sect,
+        num_pan_x, num_pan_sect):
+    
+    Yle    = CalculateYle(Bref/2, Num_sect)
+    chords = CalculateChords(Yle, Starget, Bref/2)
+    Sref   = CalculateSref(Yle, chords)
+    Cref   = CalculateMAC(Sref, Yle, chords)
+    Xle    = CalculateXle(chords, Yle)
+
+    loads_filename = f"temp/loads_x_{num_pan_x}_y_{num_pan_sect}_sect_{Num_sect}.txt"
+    avl_filename   = f"temp/input_x_{num_pan_x}_y_{num_pan_sect}_sect_{Num_sect}.avl"
+
+    num_pan_y = Num_sect * num_pan_sect
+
+    WriteAVLFile(
+        Ma,
+        Num_sect,
+        chords,
+        profile_file,
+        avl_filename,
+        Xle, Yle,
+        Sref, Cref, Bref,
+        num_pan_x, num_pan_y,
+        num_pan_sect
+    )
+
+    RunAVL(
+        Cl_target,
+        avl_filename,
+        loads_filename
+    )
+
+    Cl, Cd, alpha = ParseResults(loads_filename)
+    return Cl, Cd, alpha
+
+
+def XpanRefinementStudyParallel(
+        max_num_pan_x,
+        profile_file = 's9037opt5.dat',
+        avl_path     = 'temp/test.avl',
+        loads_path   = 'temp/test.txt',
+        Ma           = 0.053,
+        Cl_target    = 0.415,
+        Starget      = 0.85,
+        Bref         = 3,
+        Num_sect     = 10,
+        num_pan_y    = 40,
+        num_pan_sect = 4
+        ):
+    
+    num_pans_x = np.linspace(1, max_num_pan_x, max_num_pan_x)
+
+    args_list = [(profile_file, avl_path, loads_path, Ma, Cl_target,
+                  Starget, Bref, Num_sect, num_pan_x, num_pan_sect)
+                 for num_pan_x in num_pans_x]
+
+    with Pool(processes=15) as pool:
+        results = pool.starmap(AVLCase, args_list)
+
+    Cl_list, Cd_list, Alpha_list = zip(*results)
+    return Cl_list, Cd_list, Alpha_list
+
+
+def YpanRefinementStudyParallel(
+        max_num_pan_sect,
+        profile_file = 's9037opt5.dat',
+        avl_path     = 'temp/test.avl',
+        loads_path   = 'temp/test.txt',
+        Ma           = 0.053,
+        Cl_target    = 0.415,
+        Starget      = 0.85,
+        Bref         = 3,
+        Num_sect     = 10,
+        num_pan_x    = 10,
+        ):
+    
+    num_pans_sect = np.linspace(2, max_num_pan_sect, max_num_pan_sect-1, dtype=int)
+
+    args_list = [(profile_file, avl_path, loads_path, Ma, Cl_target,
+                  Starget, Bref, Num_sect, num_pan_x, num_pan_sect)
+                 for num_pan_sect in num_pans_sect]
+
+    with Pool(processes=15) as pool:
+        results = pool.starmap(AVLCase, args_list)
+
+    Cl_list, Cd_list, Alpha_list = zip(*results)
+    return Cl_list, Cd_list, Alpha_list
+
+
+def NumSectRefinementStudyParallel(
+        max_num_sect,
+        profile_file = 's9037opt5.dat',
+        avl_path     = 'temp/test.avl',
+        loads_path   = 'temp/test.txt',
+        Ma           = 0.053,
+        Cl_target    = 0.415,
+        Starget      = 0.85,
+        Bref         = 3,
+        num_pan_x    = 10,
+        num_pan_sect = 4
+        ):
+    
+    num_sects = np.linspace(2, max_num_sect, max_num_sect-1, dtype=int)
+
+    args_list = [(profile_file, avl_path, loads_path, Ma, Cl_target,
+                  Starget, Bref, num_sect, num_pan_x, num_pan_sect)
+                 for num_sect in num_sects]
+
+    with Pool(processes=15) as pool:
+        results = pool.starmap(AVLCase, args_list)
+
+    Cl_list, Cd_list, Alpha_list = zip(*results)
+    return Cl_list, Cd_list, Alpha_list
+
+
+# Old single-threaded functions, use Parallel version instead
 def XpanRefinementStudy(
         max_num_pan_x,
         profile_file = 's9037opt5.dat',
@@ -210,6 +333,7 @@ def XpanRefinementStudy(
         Alpha_list.append(alpha)
     
     return Cl_list, Cd_list, Alpha_list
+
 
 def YpanRefinementStudy(
         max_num_pan_sect,
@@ -275,7 +399,6 @@ def NumSectRefinementStudy(
         Bref         = 3,
         num_pan_x    = 10,
         num_pan_sect = 4
-
         ):
     
     Cl_list    = []
@@ -322,13 +445,13 @@ def main():
     max_num_pan_x = 20
     x = np.linspace(1, max_num_pan_x, max_num_pan_x)
     max_num_pan_sect = 20
-    y = np.linspace(1, max_num_pan_sect, max_num_pan_sect)
+    y = np.linspace(2, max_num_pan_sect, max_num_pan_sect-1)
     max_num_sect = 20
-    z = np.linspace(2, max_num_sect-1, max_num_sect-2)
+    z = np.linspace(2, max_num_sect, max_num_sect-1)
  
-    (Cl_x, Cd_x, Alpha_x) = XpanRefinementStudy(max_num_pan_x)
-    (Cl_y, Cd_y, Alpha_y) = YpanRefinementStudy(max_num_pan_sect)
-    (Cl_z, Cd_z, Alpha_z) = NumSectRefinementStudy(max_num_sect)
+    (Cl_x, Cd_x, Alpha_x) = XpanRefinementStudyParallel(max_num_pan_x)
+    (Cl_y, Cd_y, Alpha_y) = YpanRefinementStudyParallel(max_num_pan_sect)
+    (Cl_z, Cd_z, Alpha_z) = NumSectRefinementStudyParallel(max_num_sect)
 
     plt.figure(1)
 
