@@ -9,6 +9,8 @@ import uuid
 """
 TO-DO
 multi-target optimization with normalization against elliptical wing efficiency and weights
+optimization on span (and thus Sref) too
+possibly add a penalization for bending moment
 add regulation for # cores and .json path
 """
 # Took 1 h 10 min to run
