@@ -8,14 +8,13 @@ import uuid
 
 """
 TO-DO
-multi-target optimization with normalization against elliptical wing efficiency and weights
-optimization on span (and thus Sref) too
 possibly add a penalization for bending moment
+incorporate polar in .avl file
 add regulation for # cores and .json path
 """
 # Took 1 h 10 min to run
 # # 37 min with linear twist
-# AN ACCURATE ESTIMATE OF THE PROFILE CD AT 0-1 deg IS KEY FOR THE OPTIMIZATION
+# AN ACCURATE POLAR OF THE PROFILE IS KEY FOR THE OPTIMIZATION
 
 # Calculates Xle for each point in y_pan with a sweep angle of dihed in DEGREES
 def CalculateXle(chords:list, y_pan:np.ndarray, sweep=0.0):
