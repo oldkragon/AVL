@@ -64,34 +64,25 @@ def ReadConfigJSON(config_path:str):
     file_name    = config["file_name"]
     wing_name    = config["wing_name"]
     profile_name = config["profile_file"]
-
-    Starget      = config["Starget"]
-    Bref         = config["Bref"]
-    Ma           = config["Ma"]
-    CLtarget     = config["CLtarget"]
     CDp          = config["CDp"]
+    sections     = config["num_sect"]
 
-    sections = config["num_sect"]
+    opt_points = config["opt_points"]
 
-    # [dihed_b, chords_b, twists_b]
+    # [span_b, dihed_b, twist_b, chords_b]
     bounds = []
-    # [dihed, chords, twists]
+    bounds.append(config["span"]["bounds"])
+    bounds.append(config["dihed"]["bounds"])
+    bounds.append(config["twist"]["bounds"])
+
+    # [span, dihed, twist, chords]
     x0 = []
+    x0.append(config["span"]["initial"])
+    x0.append(config["dihed"]["initial"])
+    x0.append(config["twist"]["initial"])
 
     chords = []
     chords_b = []
-
-    dihed_data = config["dihed"]
-    bounds.append(dihed_data["bounds"])
-
-    dihed = dihed_data["initial"]
-    x0.append(dihed)
-
-    twist_data = config["twist"]
-    bounds.append(twist_data["bounds"])
-
-    twist = twist_data["initial"]
-    x0.append(twist)
 
     for section in config["sections"]:
         chord_data =section["chord"]
@@ -99,11 +90,9 @@ def ReadConfigJSON(config_path:str):
         chords_b.append(tuple(chord_data["bounds"]))
 
     x0.extend(chords)
-
     bounds.extend(chords_b)
-
     
-    return file_name, wing_name, profile_name, Starget, Bref, Ma, CLtarget, CDp, sections, x0, bounds
+    return file_name, wing_name, profile_name, CDp, sections, x0, bounds, opt_points
     
 
 # Composes the .avl file for a surface
@@ -211,7 +200,7 @@ quit
 
 
 # Gets Cl/Cd from loads_file
-def ParseClCd(loads_file:str):
+def ParseClCdAVL(loads_file:str):
 
     with open(loads_file, 'r') as file:
         text = file.read()
@@ -234,19 +223,17 @@ def CostFunction(params:list, fixed_params:dict):
     loads_file = f"temp/loads_{uid}.txt"
     AVL_path   = f"temp/input_{uid}.avl"
     
-    dihed        = params[0]
-    twist        = params[1]
-    chords       = params[2:]
+    Bref         = params[0]
+    dihed        = params[1]
+    twist        = params[2]
+    chords       = params[3:]
     
     sections     = fixed_params['sections']
     file_name    = fixed_params['file_name']
     wing_name    = fixed_params['wing_name']
     profile_file = fixed_params['profile_file']
-    Bref         = fixed_params['Bref']
-    Ma           = fixed_params['Ma']
-    CLtarget     = fixed_params['CLtarget']
-    Starget      = fixed_params['Starget']
     CDp          = fixed_params['CDp']
+    opt_points   = fixed_params['opt_points']
 
 
     Yle = CalculateYle(Bref/2, sections)
@@ -258,24 +245,31 @@ def CostFunction(params:list, fixed_params:dict):
     Sref = CalculateSref(Yle, chords)
     Cref = CalculateMAC(Sref, Yle, chords)
 
-    WriteAVLFile(
-        file_name, 
-        wing_name, 
-        Ma, 
-        sections, 
-        chords, 
-        twists, 
-        profile_file, 
-        AVL_path, 
-        Xle, Yle, Zle,
-        Sref, Cref, Bref,
-        0, 0, 0,
-        0, 0, 0,
-        CDp)
-    
-    RunAVL(CLtarget, AVL_path, loads_file)
+    LD_ratio = 0.0
 
-    LD_ratio = ParseClCd(loads_file)
+    for point in opt_points:
+        if point['op_mode'] == "spec_cl":
+            Ma = point['Ma']
+            CLtarget = point['op_point'] / Sref
+
+            WriteAVLFile(
+                file_name, 
+                wing_name, 
+                Ma, 
+                sections, 
+                chords, 
+                twists, 
+                profile_file, 
+                AVL_path, 
+                Xle, Yle, Zle,
+                Sref, Cref, Bref,
+                0, 0, 0,
+                0, 0, 0,
+                CDp)
+            
+            RunAVL(CLtarget, AVL_path, loads_file)
+
+        LD_ratio += point['weight'] * ParseClCdAVL(loads_file)
 
     logging.info(f'\nCl/Cd: {LD_ratio}')
 
@@ -283,17 +277,20 @@ def CostFunction(params:list, fixed_params:dict):
 
 
 def WriteFinalResults(params:list, fixed_params:dict):
-    dihed        = params[0]
-    twist        = params[1]
-    chords       = params[2:]
+
+    Bref         = params[0]
+    dihed        = params[1]
+    twist        = params[2]
+    chords       = params[3:]
     
     sections     = fixed_params['sections']
     file_name    = fixed_params['file_name']
     wing_name    = fixed_params['wing_name']
     profile_file = fixed_params['profile_file']
-    Bref         = fixed_params['Bref']
-    Ma           = fixed_params['Ma']
     CDp          = fixed_params['CDp']
+
+    opt_points   = fixed_params['opt_points']
+    Ma = opt_points[0]['Ma']
 
     AVL_path     = 'Results.avl'
 
@@ -325,46 +322,20 @@ def main():
     
     (
         file_name, wing_name, profile_name, 
-        Starget, Bref, Ma, CLtarget, CDp, sections,
-        x0, bounds
+        CDp, sections,
+        x0, bounds, opt_points
     ) = ReadConfigJSON(config_path)
 
     fixed_params = {
         'file_name': file_name,
         'wing_name': wing_name,
         'profile_file': profile_name,
-        'Bref': Bref,
-        'Ma': Ma,
-        'CLtarget': CLtarget,
-        'Starget':Starget,
         'CDp': CDp,
-        'sections': sections
+        'sections': sections,
+        'opt_points':opt_points
     }
 
     logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(message)s')
-    
-    def AreaConstraint(params):
-        chords   = params[2:]
-        Yle      = CalculateYle(Bref/2, sections)
-        Sref     = CalculateSref(Yle, chords)
-        return Sref - Starget
-    
-
-    # Nonlinear equality constraint: area ≈ Starget
-
-    sref_constr = NonlinearConstraint(
-        fun=AreaConstraint,
-        lb=-0.01, # At 0.05 surface deviates too much:
-        ub=0.01,  # Got values about 0.08-0.1 away from target
-        jac="2-point"
-    )
- 
-    """
-    res = minimize(
-        CostFunction, x0, args=(fixed_params),
-        method='SLSQP', bounds=bounds, constraints=[constraints],
-        options={"gtol": 1e-16, "disp": True, "eps": 1e-3}
-        )"""
     
     res = differential_evolution(
         CostFunction,
@@ -375,7 +346,6 @@ def main():
         atol=0.0001,
         maxiter=100,                # Number of generations, 100 gave good results
         polish=False,               # Uses gradient based method for final local search, gives some improvement but takes forever (hours)
-        constraints=(sref_constr,),
         workers=-1,                 # Adjust to number of cores you want to use, -1 for all aviable
         x0 = x0,
         disp=True,
