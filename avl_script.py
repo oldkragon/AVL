@@ -162,14 +162,28 @@ AFIL
 
 
 # Runs AVL from the in_path .avl file with constraint on alpha to have Cl_target, outputs to out_path
-def RunAVL(Cl_target:float, AVL_path:str, out_path:str):
+def RunAVL(op_mode:str, target:float, AVL_path:str, out_path:str):
 
     # Define the command sequence you want to send to AVL
-    avl_commands = f"""
+    if op_mode == 'spec_cl':
+        avl_commands = f"""
 load {AVL_path}
 oper
 A
-C {Cl_target}
+C {target}
+x
+w
+{out_path}
+
+quit
+
+"""  
+    elif op_mode == 'spec_al':
+        avl_commands = f"""
+load {AVL_path}
+oper
+A
+A {target}
 x
 w
 {out_path}
@@ -247,26 +261,27 @@ def CostFunction(params:list, fixed_params:dict):
     LD_ratio = 0.0
 
     for point in opt_points:
-        if point['op_mode'] == "spec_cl":
-            Ma = point['Ma']
-            CLtarget = point['op_point'] / Sref
+        mode = point['op_mode']
+        
+        Ma = point['Ma']
+        target = (point['op_point'] / Sref) if (mode == 'spec_cl') else point['op_point']
 
-            WriteAVLFile(
-                file_name, 
-                wing_name, 
-                Ma, 
-                sections, 
-                chords, 
-                twists, 
-                profile_file, 
-                AVL_path, 
-                Xle, Yle, Zle,
-                Sref, Cref, Bref,
-                0, 0, 0,
-                0, 0, 0,
-                CDp)
+        WriteAVLFile(
+            file_name, 
+            wing_name, 
+            Ma, 
+            sections, 
+            chords, 
+            twists, 
+            profile_file, 
+            AVL_path, 
+            Xle, Yle, Zle,
+            Sref, Cref, Bref,
+            0, 0, 0,
+            0, 0, 0,
+            CDp)
             
-            RunAVL(CLtarget, AVL_path, loads_file)
+        RunAVL(mode, target, AVL_path, loads_file)
 
         LD_ratio += point['weight'] * ParseClCdAVL(loads_file)
 
