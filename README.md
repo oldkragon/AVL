@@ -33,7 +33,7 @@ The script takes two file to run correctly:
 	- chord:
 		- bounds
 		- initial
-		
+
 As an example:
 ```json
 {
@@ -41,7 +41,6 @@ As an example:
   "wing_name": "Wing",
   "profile_file": "s9037opt5.dat",
   "num_sect": 10,
-  "Starget": 0.85,
   "CDp": 0.012,
   "opt_points": [
     {
@@ -49,7 +48,6 @@ As an example:
       "op_mode": "spec_cl",
       "op_point": 0.415,
       "Ma": 0.053,
-      "u_inf": 18.0,
       "weight": 0.7
     }
   ],
