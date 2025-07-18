@@ -33,6 +33,7 @@ The script takes two file to run correctly:
 	- chord:
 		- bounds
 		- initial
+		
 As an example:
 ```json
 {
