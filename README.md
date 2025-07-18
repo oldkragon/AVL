@@ -36,103 +36,60 @@ The script takes two file to run correctly:
 As an example:
 ```json
 {
-
     "file_name": "Olivia",
-
     "wing_name": "Wing",
-
     "profile_file": "s9037opt5.dat",
-
     "num_sect": 10,
-
     "Starget": 0.85,
-
     "CDp": 0.012,
 
     "opt_points": [
-
         {
-
             "name": "with payload",
-
             "op_mode": "spec_cl",
-
             "op_point": 0.415,
-
             "Ma": 0.053,
-
             "u_inf": 18.0,
-
             "weight": 0.7
-
         }
-
     ],
 
     "span": {
-
         "bounds": [
-
             1.0,
-
             5.0
-
         ],
-
         "initial": 3.0
-
     },
 
     "dihed": {
-
         "bounds": [
-
             0.0,
-
             2.0
-
         ],
-
         "initial": 0.1
-
     },
 
     "twist": {
-
         "bounds": [
-
             -2.0,
-
             0.5
-
         ],
-
         "initial": -0.1
-
     },
 
     "sections": [
-
         {
-
             "name": 1,
-
             "chord": {
-
                 "bounds": [
-
                     0.05,
-
                     0.5
-
                 ],
-
                 "initial": 0.284
-
             }
-
         }
     ]
-
 }
+
 ``` 
