@@ -229,8 +229,18 @@ def ParseClCdAVL(loads_file:str):
 
     return CLtot/CDtot
 
-def ParseCLAVL():
-    pass
+def ParseCLAVL(loads_file:str):
+    with open(loads_file, 'r') as file:
+        text = file.read()
+
+    CL_match = re.search(r"CLtot\s*=\s*([-+]?[0-9]*\.?[0-9]+)", text)
+
+    if not CL_match:
+        raise ValueError("CL or CD not found in loads file.")
+    
+    CLtot = float(CL_match.group(1))
+
+    return CLtot
 
 
 def RunAVLSimulations(params:list, fixed_params:dict):
@@ -302,11 +312,11 @@ class AVLEvaluator():
     
     def evaluate(self, params, fixed_params):
         results = RunAVLSimulations(params, fixed_params)
-        self.cache[tuple(params)] = results
+        self.cache[str(params)] = results
         return results[0]
     
     def get_CLS(self, params):
-        return self.cache[tuple(params)][1]
+        return self.cache[str(params)][1]
 
 
 def WriteFinalResults(params:list, fixed_params:dict):
@@ -368,10 +378,11 @@ def main():
         'opt_points':opt_points
     }
 
-    cl_targets = [opt_point['cl_target'] for opt_point in opt_points if opt_point['op_mode'] == 'spec_al']
+    cl_targets = np.array([opt_point['target_cl'] for opt_point in opt_points if opt_point['op_mode'] == 'spec_al'])
     cl_tol = 0.05
 
     evaluator = AVLEvaluator()
+    evaluator.evaluate(x0, fixed_params)
 
     def CostFunction(params:list, fixed_params:dict):
         return evaluator.evaluate(params, fixed_params)

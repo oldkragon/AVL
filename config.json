@@ -16,8 +16,9 @@
         },
         {
             "name": "without payload",
-            "op_mode": "spec_cl",
-            "op_point": 0.254,
+            "op_mode": "spec_al",
+            "op_point": 2.0,
+            "target_cl": 0.6,
             "Ma": 0.053,
             "u_inf": 18.0,
             "weight": 0.3
