@@ -11,6 +11,7 @@ TO-DO
 possibly add a penalization for bending moment
 incorporate polar in .avl file
 add regulation for # cores and .json path
+add opt_type (max efficiency,  spec cl, spec al) and necessary constraints 
 """
 # Took 1 h 10 min to run
 # # 37 min with linear twist
@@ -312,11 +313,11 @@ class AVLEvaluator():
     
     def evaluate(self, params, fixed_params):
         results = RunAVLSimulations(params, fixed_params)
-        self.cache[str(params)] = results
+        self.cache['last'] = results
         return results[0]
     
-    def get_CLS(self, params):
-        return self.cache[str(params)][1]
+    def get_CLS(self):
+        return self.cache['last'][1]
 
 
 def WriteFinalResults(params:list, fixed_params:dict):
@@ -360,6 +361,12 @@ def WriteFinalResults(params:list, fixed_params:dict):
         CDp=CDp
     )
 
+# Using global variable to make cost function picklable
+evaluator = AVLEvaluator()
+def CostFunction(params:list, fixed_params:dict):
+        return evaluator.evaluate(params, fixed_params)
+
+
 def main():
     config_path = "config.json"
     
@@ -381,14 +388,10 @@ def main():
     cl_targets = np.array([opt_point['target_cl'] for opt_point in opt_points if opt_point['op_mode'] == 'spec_al'])
     cl_tol = 0.05
 
-    evaluator = AVLEvaluator()
     evaluator.evaluate(x0, fixed_params)
-
-    def CostFunction(params:list, fixed_params:dict):
-        return evaluator.evaluate(params, fixed_params)
     
     def CLsConstraint(params:list):
-        return evaluator.get_CLS(params)
+        return evaluator.get_CLS()
     
     cl_constraints = NonlinearConstraint(CLsConstraint, cl_targets - cl_tol, cl_targets + cl_tol)
 
@@ -399,7 +402,7 @@ def main():
         bounds=bounds,
         args=(fixed_params,),
         strategy="best1bin",
-        popsize=30,                 # Number of candidates for generation
+        popsize=8,                 # Number of candidates for generation
         atol=0.0001,
         maxiter=100,                # Number of generations, 100 gave good results
         polish=False,               # Uses gradient based method for final local search, gives some improvement but takes forever (hours)
