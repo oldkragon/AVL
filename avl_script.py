@@ -229,11 +229,8 @@ def ParseClCdAVL(loads_file:str):
 
     return CLtot/CDtot
 
-def ParseCLAVL():
-    pass
 
-
-def RunAVLSimulations(params:list, fixed_params:dict):
+def CostFunction(params:list, fixed_params:dict):
 
     uid = uuid.uuid4().hex  # generate unique ID for each call
     loads_file = f"temp/loads_{uid}.txt"
@@ -262,7 +259,6 @@ def RunAVLSimulations(params:list, fixed_params:dict):
     Cref = CalculateMAC(Sref, Yle, chords)
 
     LD_ratio = 0.0
-    CLs = []
 
     for point in opt_points:
         mode = point['op_mode']
@@ -288,25 +284,10 @@ def RunAVLSimulations(params:list, fixed_params:dict):
         RunAVL(mode, target, AVL_path, loads_file)
 
         LD_ratio += point['weight'] * ParseClCdAVL(loads_file)
-        if point['op_mode'] == 'spec_al':
-            CLs.append(ParseCLAVL(loads_file))
 
     logging.info(f'\nCl/Cd: {LD_ratio}')
 
-    return -LD_ratio, CLs
-
-
-class AVLEvaluator():
-    def __init__(self):
-        self.cache = {}
-    
-    def evaluate(self, params, fixed_params):
-        results = RunAVLSimulations(params, fixed_params)
-        self.cache[tuple(params)] = results
-        return results[0]
-    
-    def get_CLS(self, params):
-        return self.cache[tuple(params)][1]
+    return -LD_ratio
 
 
 def WriteFinalResults(params:list, fixed_params:dict):
@@ -368,19 +349,6 @@ def main():
         'opt_points':opt_points
     }
 
-    cl_targets = [opt_point['cl_target'] for opt_point in opt_points if opt_point['op_mode'] == 'spec_al']
-    cl_tol = 0.05
-
-    evaluator = AVLEvaluator()
-
-    def CostFunction(params:list, fixed_params:dict):
-        return evaluator.evaluate(params, fixed_params)
-    
-    def CLsConstraint(params:list):
-        return evaluator.get_CLS(params)
-    
-    cl_constraints = NonlinearConstraint(CLsConstraint, cl_targets - cl_tol, cl_targets + cl_tol)
-
     logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(message)s')
     
     res = differential_evolution(
@@ -398,7 +366,6 @@ def main():
         updating='deferred',
         mutation=(0.5, 1.5),
         recombination=0.7, 
-        constraints=cl_constraints
     )
 
     logging.info(res)
