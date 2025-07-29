@@ -107,14 +107,14 @@ AFIL
 
 
 # Runs AVL from the in_path .avl file with constraint on alpha to have Cl_target, outputs to out_path
-def RunAVL(Cl_target:float, AVL_path:str, out_path:str):
+def RunAVL(Al_target:float, AVL_path:str, out_path:str):
 
     # Define the command sequence you want to send to AVL
     avl_commands = f"""
 load {AVL_path}
 oper
 A
-C {Cl_target}
+A {Al_target}
 x
 w
 {out_path}
@@ -165,7 +165,7 @@ def AVLCase(
         
         profile_file, 
         avl_path, loads_path, 
-        Ma, Cl_target,
+        Ma, Al_target,
         Starget, Bref, 
         Num_sect,
         num_pan_x, num_pan_sect):
@@ -194,7 +194,7 @@ def AVLCase(
     )
 
     RunAVL(
-        Cl_target,
+        Al_target,
         avl_filename,
         loads_filename
     )
@@ -209,7 +209,7 @@ def XpanRefinementStudyParallel(
         avl_path     = 'temp/test.avl',
         loads_path   = 'temp/test.txt',
         Ma           = 0.053,
-        Cl_target    = 0.415,
+        Al_target    = 0.5,
         Starget      = 0.85,
         Bref         = 3,
         Num_sect     = 10,
@@ -219,7 +219,7 @@ def XpanRefinementStudyParallel(
     
     num_pans_x = np.linspace(1, max_num_pan_x, max_num_pan_x)
 
-    args_list = [(profile_file, avl_path, loads_path, Ma, Cl_target,
+    args_list = [(profile_file, avl_path, loads_path, Ma, Al_target,
                   Starget, Bref, Num_sect, num_pan_x, num_pan_sect)
                  for num_pan_x in num_pans_x]
 
@@ -236,7 +236,7 @@ def YpanRefinementStudyParallel(
         avl_path     = 'temp/test.avl',
         loads_path   = 'temp/test.txt',
         Ma           = 0.053,
-        Cl_target    = 0.415,
+        Al_target    = 0.5,
         Starget      = 0.85,
         Bref         = 3,
         Num_sect     = 10,
@@ -245,7 +245,7 @@ def YpanRefinementStudyParallel(
     
     num_pans_sect = np.linspace(2, max_num_pan_sect, max_num_pan_sect-1, dtype=int)
 
-    args_list = [(profile_file, avl_path, loads_path, Ma, Cl_target,
+    args_list = [(profile_file, avl_path, loads_path, Ma, Al_target,
                   Starget, Bref, Num_sect, num_pan_x, num_pan_sect)
                  for num_pan_sect in num_pans_sect]
 
@@ -262,7 +262,7 @@ def NumSectRefinementStudyParallel(
         avl_path     = 'temp/test.avl',
         loads_path   = 'temp/test.txt',
         Ma           = 0.053,
-        Cl_target    = 0.415,
+        Al_target    = 0.5,
         Starget      = 0.85,
         Bref         = 3,
         num_pan_x    = 10,
@@ -271,7 +271,7 @@ def NumSectRefinementStudyParallel(
     
     num_sects = np.linspace(2, max_num_sect, max_num_sect-1, dtype=int)
 
-    args_list = [(profile_file, avl_path, loads_path, Ma, Cl_target,
+    args_list = [(profile_file, avl_path, loads_path, Ma, Al_target,
                   Starget, Bref, num_sect, num_pan_x, num_pan_sect)
                  for num_sect in num_sects]
 
@@ -394,7 +394,7 @@ def NumSectRefinementStudy(
         avl_path     = 'temp/test.avl',
         loads_path   = 'temp/test.txt',
         Ma           = 0.053,
-        Cl_target    = 0.415,
+        Al_target    = 0.5,
         Starget      = 0.85,
         Bref         = 3,
         num_pan_x    = 10,
@@ -427,7 +427,7 @@ def NumSectRefinementStudy(
         )
 
         RunAVL(
-            Cl_target,
+            Al_target,
             avl_path,
             loads_path
         )

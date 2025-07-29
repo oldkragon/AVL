@@ -121,7 +121,7 @@ def WriteAVLFile(
 #
 SURFACE
 {wing_name}
-10  1.0  {4*sections}  -2.0   ! Nchord   Cspace   Nspan  Sspace
+6  1.0  {4*sections}  -2.0   ! Nchord   Cspace   Nspan  Sspace
 #
 # reflect image wing about y=0 plane
 YDUPLICATE
