@@ -172,8 +172,6 @@ oper
 A
 C {target}
 x
-w
-{out_path}
 
 quit
 
@@ -185,8 +183,6 @@ oper
 A
 A {target}
 x
-w
-{out_path}
 
 quit
 
@@ -204,12 +200,10 @@ quit
     # Send the command string and capture output
     stdout, stderr = process.communicate(avl_commands)
 
-    logging.debug("AVL STDOUT:\n" + stdout)
-    logging.debug("AVL STDERR:\n" + stderr)
-
     if process.returncode != 0:
         raise RuntimeError(f"AVL failed with return code {process.returncode}")
-
+    
+    return stdout
 
 
 # Gets Cl/Cd from loads_file
@@ -227,20 +221,18 @@ def ParseClCdAVL(loads_file:str):
     CLtot = float(CL_match.group(1))
     CDtot = float(CD_match.group(1))
 
-    return CLtot/CDtot
+    return CLtot, CDtot
 
-def ParseCLAVL(loads_file:str):
-    with open(loads_file, 'r') as file:
-        text = file.read()
 
-    CL_match = re.search(r"CLtot\s*=\s*([-+]?[0-9]*\.?[0-9]+)", text)
-
-    if not CL_match:
-        raise ValueError("CL or CD not found in loads file.")
+# Gets Cl/Cd from AVL's stdout
+def ParseAVLstdout(stdout:str):
+    for line in stdout.splitlines():
+        if line.startswith('  CLtot'):
+            CLtot = float(line.split('=')[-1])
+        elif line.startswith('  CDtot'):
+            CDtot = float(line.split('=')[-1])
     
-    CLtot = float(CL_match.group(1))
-
-    return CLtot
+    return CLtot, CDtot
 
 
 def RunAVLSimulations(params:list, fixed_params:dict):
@@ -299,12 +291,13 @@ def RunAVLSimulations(params:list, fixed_params:dict):
         if mode == 'spec_cl' and op_type == 'target_cl':
                 raise ValueError("op_mode 'spec_cl' is not compatible with op_type 'target_cl'")
             
-        RunAVL(mode, target, AVL_path, loads_file)
+        stdout = RunAVL(mode, target, AVL_path, loads_file)
+        cl, cd = ParseAVLstdout(stdout)
 
         if op_type == 'max_efficiency':
-            LD_ratio += point['weight'] * ParseClCdAVL(loads_file)
+            LD_ratio += point['weight'] * (cl/cd)
         elif op_type == 'target_cl':
-            CLs.append(ParseCLAVL(loads_file))
+            CLs.append(cl)
 
     logging.info(f'\nCl/Cd: {LD_ratio}')
 
