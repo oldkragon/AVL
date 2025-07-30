@@ -11,7 +11,6 @@ TO-DO
 possibly add a penalization for bending moment
 incorporate polar in .avl file
 add regulation for # cores and .json path
-add opt_type (max efficiency,  spec cl, spec al) and necessary constraints 
 """
 # Took 1 h 10 min to run
 # # 37 min with linear twist
@@ -122,7 +121,7 @@ def WriteAVLFile(
 #
 SURFACE
 {wing_name}
-10  1.0  {4*sections}  -2.0   ! Nchord   Cspace   Nspan  Sspace
+6  1.0  {4*sections}  -2.0   ! Nchord   Cspace   Nspan  Sspace
 #
 # reflect image wing about y=0 plane
 YDUPLICATE
@@ -277,6 +276,7 @@ def RunAVLSimulations(params:list, fixed_params:dict):
 
     for point in opt_points:
         mode = point['op_mode']
+        op_type = point['op_type']
         
         Ma = point['Ma']
         target = (point['op_point'] / Sref) if (mode == 'spec_cl') else point['op_point']
@@ -295,11 +295,15 @@ def RunAVLSimulations(params:list, fixed_params:dict):
             0, 0, 0,
             0, 0, 0,
             CDp)
+        
+        if mode == 'spec_cl' and op_type == 'target_cl':
+                raise ValueError("op_mode 'spec_cl' is not compatible with op_type 'target_cl'")
             
         RunAVL(mode, target, AVL_path, loads_file)
 
-        LD_ratio += point['weight'] * ParseClCdAVL(loads_file)
-        if point['op_mode'] == 'spec_al':
+        if op_type == 'max_efficiency':
+            LD_ratio += point['weight'] * ParseClCdAVL(loads_file)
+        elif op_type == 'target_cl':
             CLs.append(ParseCLAVL(loads_file))
 
     logging.info(f'\nCl/Cd: {LD_ratio}')

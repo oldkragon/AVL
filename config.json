@@ -10,6 +10,7 @@
             "name": "with payload",
             "op_mode": "spec_cl",
             "op_point": 0.415,
+            "op_type": "max_efficiency",
             "Ma": 0.053,
             "u_inf": 18.0,
             "weight": 0.7
@@ -18,6 +19,7 @@
             "name": "without payload",
             "op_mode": "spec_al",
             "op_point": 2.0,
+            "op_type": "target_cl",
             "target_cl": 0.6,
             "Ma": 0.053,
             "u_inf": 18.0,

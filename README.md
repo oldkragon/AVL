@@ -25,6 +25,8 @@ The script takes two file to run correctly:
 	-  name : not read by the script, used as a comment to distinguish points
 	- op_mode : either 'spec_cl' where you provide S Cl or 'spec_al' where you provide alpha
 	- op_point : the value to provide according to the "op_mode"
+  - op_type : choose 'max_efficiency' to optimize efficiency at specified point, 'target_cl' (only for 'spec_al' mode) to achieve "target_cl" at operating alpha
+  - target_cl : only for op_type 'target_cl' 
 	- Ma : Mach's number
 	- weight : you can assign different weights to each point, it is recommended, but not necessary, to have them add up to one
 - span, twist and dihed : fields to provide bounds for the optimization, each has to include a sub-field "initial" for an initial guess and "bounds" to limit the region to explore
