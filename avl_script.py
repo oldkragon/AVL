@@ -5,6 +5,17 @@ import re
 import json
 import logging
 import uuid
+import tempfile
+import time
+
+# Useful wrapper that allows to time a function by adding @timer in the line before the function definition
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"{func.__name__} took {end-start:.4f} seconds")
+    return wrapper
 
 """
 TO-DO
@@ -95,7 +106,7 @@ def ReadConfigJSON(config_path:str):
     
 
 # Composes the .avl file for a surface
-def WriteAVLFile(
+def WriteAVLText(
         file_name:str,
         wing_name:str, 
         Ma:float, 
@@ -155,19 +166,20 @@ AFIL
 #==============================================================
 #
 """
-    with open(AVL_path, 'w') as avl_file:
-        avl_file.write(BaseAVLText)
-
     return BaseAVLText
 
 
 # Runs AVL from the in_path .avl file with constraint on alpha to have Cl_target, outputs to out_path
-def RunAVL(op_mode:str, target:float, AVL_path:str, out_path:str):
+def RunAVL(op_mode:str, target:float, avl_geom_text:str)->str:
+    # Create a temporary .avl file
+    with tempfile.NamedTemporaryFile(mode='w+', suffix='.avl', delete=False) as temp_geom:
+        temp_geom.write(avl_geom_text)
+        temp_geom_path = temp_geom.name
 
     # Define the command sequence you want to send to AVL
     if op_mode == 'spec_cl':
         avl_commands = f"""
-load {AVL_path}
+load {temp_geom_path}
 oper
 A
 C {target}
@@ -178,7 +190,7 @@ quit
 """  
     elif op_mode == 'spec_al':
         avl_commands = f"""
-load {AVL_path}
+load {temp_geom_path}
 oper
 A
 A {target}
@@ -206,7 +218,7 @@ quit
     return stdout
 
 
-# Gets Cl/Cd from loads_file
+# Gets Cl/Cd from loads_file, use ParseAVLstdout as it is faster
 def ParseClCdAVL(loads_file:str):
 
     with open(loads_file, 'r') as file:
@@ -273,7 +285,7 @@ def RunAVLSimulations(params:list, fixed_params:dict):
         Ma = point['Ma']
         target = (point['op_point'] / Sref) if (mode == 'spec_cl') else point['op_point']
 
-        WriteAVLFile(
+        avl_text = WriteAVLText(
             file_name, 
             wing_name, 
             Ma, 
@@ -291,7 +303,7 @@ def RunAVLSimulations(params:list, fixed_params:dict):
         if mode == 'spec_cl' and op_type == 'target_cl':
                 raise ValueError("op_mode 'spec_cl' is not compatible with op_type 'target_cl'")
             
-        stdout = RunAVL(mode, target, AVL_path, loads_file)
+        stdout = RunAVL(mode, target, avl_text)
         cl, cd = ParseAVLstdout(stdout)
 
         if op_type == 'max_efficiency':
@@ -344,7 +356,7 @@ def WriteFinalResults(params:list, fixed_params:dict):
     Sref = CalculateSref(Yle, chords)
     Cref = CalculateMAC(Sref, Yle, chords)
 
-    WriteAVLFile(
+    final_text = WriteAVLText(
         file_name,
         wing_name,
         Ma,
@@ -357,6 +369,8 @@ def WriteFinalResults(params:list, fixed_params:dict):
         Sref, Cref, Bref,
         CDp=CDp
     )
+    with open('Results.avl', 'w') as r:
+        r.write(final_text)
 
 # Using global variable to make cost function picklable
 evaluator = AVLEvaluator()
