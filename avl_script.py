@@ -169,7 +169,7 @@ AFIL
     return BaseAVLText
 
 
-# Runs AVL from the in_path .avl file with constraint on alpha to have Cl_target, outputs to out_path
+# Runs AVL from the avl_geom_text treated as an .avl file with constraint on alpha to have Cl_target, outputs to out_path
 def RunAVL(op_mode:str, target:float, avl_geom_text:str)->str:
     # Create a temporary .avl file
     with tempfile.NamedTemporaryFile(mode='w+', suffix='.avl', delete=False) as temp_geom:
