@@ -8,6 +8,9 @@ import uuid
 import tempfile
 import time
 
+# Optimizing with spec_cl - max_efficiency + spec_cl - target_cl leads avl to raise the alpha indefinetly giving an error,
+# likely due to not having a limit on the Sref, optimizing without limit on Sref needs more attention
+
 # Useful wrapper that allows to time a function by adding @timer in the line before the function definition
 def timer(func):
     def wrapper(*args, **kwargs):
@@ -22,6 +25,7 @@ TO-DO
 possibly add a penalization for bending moment
 incorporate polar in .avl file
 add regulation for # cores and .json path
+add min drag op_type
 """
 # Took 1 h 10 min to run
 # # 37 min with linear twist
@@ -76,7 +80,7 @@ def ReadConfigJSON(config_path:str):
     profile_name = config["profile_file"]
     CDp          = config["CDp"]
     sections     = config["num_sect"]
-
+    Starget = config["Starget"]
     opt_points = config["opt_points"]
 
     # [span_b, dihed_b, twist_b, chords_b]
@@ -102,7 +106,7 @@ def ReadConfigJSON(config_path:str):
     x0.extend(chords)
     bounds.extend(chords_b)
     
-    return file_name, wing_name, profile_name, CDp, sections, x0, bounds, opt_points
+    return file_name, wing_name, profile_name, CDp, sections, Starget, x0, bounds, opt_points
     
 
 # Composes the .avl file for a surface
@@ -238,13 +242,28 @@ def ParseClCdAVL(loads_file:str):
 
 # Gets Cl/Cd from AVL's stdout
 def ParseAVLstdout(stdout:str):
+    cltot = cdtot = None
+    cl_pattern = re.compile(r'^\s*CLtot\s*=\s*([-+]?[\d.]+)')
+    cd_pattern = re.compile(r'^\s*CDtot\s*=\s*([-+]?[\d.]+)')
+
     for line in stdout.splitlines():
-        if line.startswith('  CLtot'):
-            CLtot = float(line.split('=')[-1])
-        elif line.startswith('  CDtot'):
-            CDtot = float(line.split('=')[-1])
-    
-    return CLtot, CDtot
+        if cltot is None:
+            cl_match = cl_pattern.match(line)
+            if cl_match:
+                cltot = float(cl_match.group(1))
+        if cdtot is None:
+            cd_match = cd_pattern.match(line)
+            if cd_match:
+                cdtot = float(cd_match.group(1))
+        if cltot is not None and cdtot is not None:
+            break
+
+    if cltot is None:
+        raise RuntimeError('AVL output missing CLtot')
+    if cdtot is None:
+        raise RuntimeError('AVL output missing CDtot')
+
+    return cltot, cdtot
 
 
 def RunAVLSimulations(params:list, fixed_params:dict):
@@ -383,7 +402,7 @@ def main():
     
     (
         file_name, wing_name, profile_name, 
-        CDp, sections,
+        CDp, sections, Starget,
         x0, bounds, opt_points
     ) = ReadConfigJSON(config_path)
 
@@ -404,7 +423,13 @@ def main():
     def CLsConstraint(params:list):
         return evaluator.get_CLS()
     
+    def SrefConstraint(params:list):
+        Yle = CalculateYle(params[0]/2, sections)
+        S_true = CalculateSref(Yle, params[3:])
+        return S_true - Starget
+    
     cl_constraints = NonlinearConstraint(CLsConstraint, cl_targets - cl_tol, cl_targets + cl_tol)
+    sref_constraint = NonlinearConstraint(SrefConstraint,0.5*Starget, 1.5*Starget )
 
     logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(message)s')
     
@@ -413,8 +438,8 @@ def main():
         bounds=bounds,
         args=(fixed_params,),
         strategy="best1bin",
-        popsize=8,                 # Number of candidates for generation
-        atol=0.0001,
+        popsize=30,                 # Number of candidates for generation
+        atol=0.00001,
         maxiter=100,                # Number of generations, 100 gave good results
         polish=False,               # Uses gradient based method for final local search, gives some improvement but takes forever (hours)
         workers=-1,                 # Adjust to number of cores you want to use, -1 for all aviable
@@ -423,7 +448,7 @@ def main():
         updating='deferred',
         mutation=(0.5, 1.5),
         recombination=0.7, 
-        constraints=cl_constraints
+        constraints=[cl_constraints, sref_constraint]
     )
 
     logging.info(res)
