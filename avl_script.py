@@ -5,12 +5,27 @@ import re
 import json
 import logging
 import uuid
+import tempfile
+import time
+
+# Optimizing with spec_cl - max_efficiency + spec_cl - target_cl leads avl to raise the alpha indefinetly giving an error,
+# likely due to not having a limit on the Sref, optimizing without limit on Sref needs more attention
+
+# Useful wrapper that allows to time a function by adding @timer in the line before the function definition
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"{func.__name__} took {end-start:.4f} seconds")
+    return wrapper
 
 """
 TO-DO
 possibly add a penalization for bending moment
 incorporate polar in .avl file
 add regulation for # cores and .json path
+add min drag op_type
 """
 # Took 1 h 10 min to run
 # # 37 min with linear twist
@@ -65,7 +80,7 @@ def ReadConfigJSON(config_path:str):
     profile_name = config["profile_file"]
     CDp          = config["CDp"]
     sections     = config["num_sect"]
-
+    Starget = config["Starget"]
     opt_points = config["opt_points"]
 
     # [span_b, dihed_b, twist_b, chords_b]
@@ -91,11 +106,11 @@ def ReadConfigJSON(config_path:str):
     x0.extend(chords)
     bounds.extend(chords_b)
     
-    return file_name, wing_name, profile_name, CDp, sections, x0, bounds, opt_points
+    return file_name, wing_name, profile_name, CDp, sections, Starget, x0, bounds, opt_points
     
 
 # Composes the .avl file for a surface
-def WriteAVLFile(
+def WriteAVLText(
         file_name:str,
         wing_name:str, 
         Ma:float, 
@@ -155,38 +170,35 @@ AFIL
 #==============================================================
 #
 """
-    with open(AVL_path, 'w') as avl_file:
-        avl_file.write(BaseAVLText)
-
     return BaseAVLText
 
 
-# Runs AVL from the in_path .avl file with constraint on alpha to have Cl_target, outputs to out_path
-def RunAVL(op_mode:str, target:float, AVL_path:str, out_path:str):
+# Runs AVL from the avl_geom_text treated as an .avl file with constraint on alpha to have Cl_target, outputs to out_path
+def RunAVL(op_mode:str, target:float, avl_geom_text:str)->str:
+    # Create a temporary .avl file
+    with tempfile.NamedTemporaryFile(mode='w+', suffix='.avl', delete=False) as temp_geom:
+        temp_geom.write(avl_geom_text)
+        temp_geom_path = temp_geom.name
 
     # Define the command sequence you want to send to AVL
     if op_mode == 'spec_cl':
         avl_commands = f"""
-load {AVL_path}
+load {temp_geom_path}
 oper
 A
 C {target}
 x
-w
-{out_path}
 
 quit
 
 """  
     elif op_mode == 'spec_al':
         avl_commands = f"""
-load {AVL_path}
+load {temp_geom_path}
 oper
 A
 A {target}
 x
-w
-{out_path}
 
 quit
 
@@ -204,15 +216,13 @@ quit
     # Send the command string and capture output
     stdout, stderr = process.communicate(avl_commands)
 
-    logging.debug("AVL STDOUT:\n" + stdout)
-    logging.debug("AVL STDERR:\n" + stderr)
-
     if process.returncode != 0:
         raise RuntimeError(f"AVL failed with return code {process.returncode}")
+    
+    return stdout
 
 
-
-# Gets Cl/Cd from loads_file
+# Gets Cl/Cd from loads_file, use ParseAVLstdout as it is faster
 def ParseClCdAVL(loads_file:str):
 
     with open(loads_file, 'r') as file:
@@ -227,8 +237,33 @@ def ParseClCdAVL(loads_file:str):
     CLtot = float(CL_match.group(1))
     CDtot = float(CD_match.group(1))
 
-    return CLtot/CDtot
+    return CLtot, CDtot
 
+
+# Gets Cl/Cd from AVL's stdout
+def ParseAVLstdout(stdout:str):
+    cltot = cdtot = None
+    cl_pattern = re.compile(r'^\s*CLtot\s*=\s*([-+]?[\d.]+)')
+    cd_pattern = re.compile(r'^\s*CDtot\s*=\s*([-+]?[\d.]+)')
+
+    for line in stdout.splitlines():
+        if cltot is None:
+            cl_match = cl_pattern.match(line)
+            if cl_match:
+                cltot = float(cl_match.group(1))
+        if cdtot is None:
+            cd_match = cd_pattern.match(line)
+            if cd_match:
+                cdtot = float(cd_match.group(1))
+        if cltot is not None and cdtot is not None:
+            break
+
+    if cltot is None:
+        raise RuntimeError('AVL output missing CLtot')
+    if cdtot is None:
+        raise RuntimeError('AVL output missing CDtot')
+
+    return cltot, cdtot
 
 def CostFunction(params:list, fixed_params:dict):
 
@@ -262,11 +297,12 @@ def CostFunction(params:list, fixed_params:dict):
 
     for point in opt_points:
         mode = point['op_mode']
+        op_type = point['op_type']
         
         Ma = point['Ma']
         target = (point['op_point'] / Sref) if (mode == 'spec_cl') else point['op_point']
 
-        WriteAVLFile(
+        avl_text = WriteAVLText(
             file_name, 
             wing_name, 
             Ma, 
@@ -280,16 +316,36 @@ def CostFunction(params:list, fixed_params:dict):
             0, 0, 0,
             0, 0, 0,
             CDp)
+        
+        if mode == 'spec_cl' and op_type == 'target_cl':
+                raise ValueError("op_mode 'spec_cl' is not compatible with op_type 'target_cl'")
             
-        RunAVL(mode, target, AVL_path, loads_file)
+        stdout = RunAVL(mode, target, avl_text)
+        cl, cd = ParseAVLstdout(stdout)
 
-        LD_ratio += point['weight'] * ParseClCdAVL(loads_file)
+        if op_type == 'max_efficiency':
+            LD_ratio += point['weight'] * (cl/cd)
+        elif op_type == 'target_cl':
+            CLs.append(cl)
 
     logging.info(f'\nCl/Cd: {LD_ratio}')
 
-    return -LD_ratio
+    return -LD_ratio, CLs
 
 
+class AVLEvaluator():
+    def __init__(self):
+        self.cache = {}
+    
+    def evaluate(self, params, fixed_params):
+        results = RunAVLSimulations(params, fixed_params)
+        self.cache['last'] = results
+        return results[0]
+    
+    def get_CLS(self):
+        return self.cache['last'][1]
+
+      
 def WriteFinalResults(params:list, fixed_params:dict):
 
     Bref         = params[0]
@@ -317,7 +373,7 @@ def WriteFinalResults(params:list, fixed_params:dict):
     Sref = CalculateSref(Yle, chords)
     Cref = CalculateMAC(Sref, Yle, chords)
 
-    WriteAVLFile(
+    final_text = WriteAVLText(
         file_name,
         wing_name,
         Ma,
@@ -330,13 +386,21 @@ def WriteFinalResults(params:list, fixed_params:dict):
         Sref, Cref, Bref,
         CDp=CDp
     )
+    with open('Results.avl', 'w') as r:
+        r.write(final_text)
+
+# Using global variable to make cost function picklable
+evaluator = AVLEvaluator()
+def CostFunction(params:list, fixed_params:dict):
+        return evaluator.evaluate(params, fixed_params)
+
 
 def main():
     config_path = "config.json"
     
     (
         file_name, wing_name, profile_name, 
-        CDp, sections,
+        CDp, sections, Starget,
         x0, bounds, opt_points
     ) = ReadConfigJSON(config_path)
 
@@ -349,6 +413,22 @@ def main():
         'opt_points':opt_points
     }
 
+    cl_targets = np.array([opt_point['target_cl'] for opt_point in opt_points if opt_point['op_mode'] == 'spec_al'])
+    cl_tol = 0.05
+
+    evaluator.evaluate(x0, fixed_params)
+    
+    def CLsConstraint(params:list):
+        return evaluator.get_CLS()
+    
+    def SrefConstraint(params:list):
+        Yle = CalculateYle(params[0]/2, sections)
+        S_true = CalculateSref(Yle, params[3:])
+        return S_true - Starget
+    
+    cl_constraints = NonlinearConstraint(CLsConstraint, cl_targets - cl_tol, cl_targets + cl_tol)
+    sref_constraint = NonlinearConstraint(SrefConstraint,0.5*Starget, 1.5*Starget )
+
     logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(message)s')
     
     res = differential_evolution(
@@ -357,7 +437,7 @@ def main():
         args=(fixed_params,),
         strategy="best1bin",
         popsize=30,                 # Number of candidates for generation
-        atol=0.0001,
+        atol=0.00001,
         maxiter=100,                # Number of generations, 100 gave good results
         polish=False,               # Uses gradient based method for final local search, gives some improvement but takes forever (hours)
         workers=-1,                 # Adjust to number of cores you want to use, -1 for all aviable
@@ -366,6 +446,7 @@ def main():
         updating='deferred',
         mutation=(0.5, 1.5),
         recombination=0.7, 
+        constraints=[cl_constraints, sref_constraint]
     )
 
     logging.info(res)
