@@ -265,7 +265,7 @@ def ParseAVLstdout(stdout:str):
 
     return cltot, cdtot
 
-def CostFunction(params:list, fixed_params:dict):
+def RunAVLSimulations(params:list, fixed_params:dict):
 
     uid = uuid.uuid4().hex  # generate unique ID for each call
     loads_file = f"temp/loads_{uid}.txt"
@@ -294,6 +294,7 @@ def CostFunction(params:list, fixed_params:dict):
     Cref = CalculateMAC(Sref, Yle, chords)
 
     LD_ratio = 0.0
+    CLs = []
 
     for point in opt_points:
         mode = point['op_mode']
