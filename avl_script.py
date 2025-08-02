@@ -26,6 +26,7 @@ possibly add a penalization for bending moment
 incorporate polar in .avl file
 add regulation for # cores and .json path
 add min drag op_type
+test init=latinhypercube instead of x0, second_order_correction structured like the first order one
 """
 # Took 1 h 10 min to run
 # # 37 min with linear twist
@@ -331,7 +332,12 @@ def RunAVLSimulations(params:list, fixed_params:dict):
 
     logging.info(f'\nCl/Cd: {LD_ratio}')
 
-    return -LD_ratio, CLs
+    # Penalty to encourage small negative first derivative (taper) and negative second derivative
+    first_order_penalty = np.sum(np.maximum(np.diff(chords), 0))
+    second_order_finite_diff = np.diff(chords, n=2)
+    second_order_penalty = np.sum(second_order_finite_diff * np.abs(second_order_finite_diff))
+
+    return -LD_ratio + first_order_penalty + second_order_penalty, CLs
 
 
 class AVLEvaluator():
@@ -439,6 +445,7 @@ def main():
         strategy="best1bin",
         popsize=30,                 # Number of candidates for generation
         atol=0.00001,
+        tol=0.001,
         maxiter=100,                # Number of generations, 100 gave good results
         polish=False,               # Uses gradient based method for final local search, gives some improvement but takes forever (hours)
         workers=-1,                 # Adjust to number of cores you want to use, -1 for all aviable
